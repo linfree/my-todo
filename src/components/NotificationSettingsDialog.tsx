@@ -4,21 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
-import { notificationApi, NotificationSettings } from "../lib/api";
+import { notificationApi, NotificationSettings, isTauri as checkIsTauri } from "../lib/api";
 
 interface NotificationSettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-// 检查是否在 Tauri 环境中
-const isTauri = () => {
-  try {
-    return window.__TAURI__ !== undefined;
-  } catch {
-    return false;
-  }
-};
 
 export function NotificationSettingsDialog({
   isOpen,
@@ -31,7 +22,17 @@ export function NotificationSettingsDialog({
   const [permission, setPermission] = useState<"granted" | "denied" | "default">("default");
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const isDesktop = isTauri();
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // 检查是否在 Tauri 环境中
+  useEffect(() => {
+    const checkPlatform = async () => {
+      const isTauriEnv = checkIsTauri();
+      setIsDesktop(isTauriEnv);
+      console.log('Platform check:', { isTauriEnv, hasTauriGlobal: !!(window as any).__TAURI__ });
+    };
+    checkPlatform();
+  }, []);
 
   // 加载设置
   useEffect(() => {
@@ -162,7 +163,7 @@ export function NotificationSettingsDialog({
               <label className="text-sm font-medium">企业微信机器人 Webhook</label>
               {!isDesktop && (
                 <span className="text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">
-                  仅桌面端
+                  Web 端不可用
                 </span>
               )}
             </div>
@@ -174,7 +175,6 @@ export function NotificationSettingsDialog({
                 setSettings({ ...settings, wechat_webhook: e.target.value })
               }
               className="font-mono text-sm"
-              disabled={!isDesktop}
             />
             <p className="text-xs text-muted-foreground">
               {isDesktop

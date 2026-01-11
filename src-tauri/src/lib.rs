@@ -74,6 +74,24 @@ async fn send_notification(
     Ok(())
 }
 
+// 检查通知权限状态
+// Windows 桌面应用默认拥有通知权限，用户可在系统设置中手动关闭
+#[tauri::command]
+async fn check_notification_permission() -> Result<String, String> {
+    // Windows 上桌面应用默认有通知权限
+    // 如果用户在系统设置中关闭了通知，发送时会静默失败
+    Ok("granted".to_string())
+}
+
+// 请求通知权限（Windows 上需要用户手动在设置中开启）
+#[tauri::command]
+async fn request_notification_permission() -> Result<bool, String> {
+    // Windows 上通知权限由系统设置控制
+    // 我们返回 true 表示应用已准备好发送通知
+    // 如果用户在系统设置中关闭了通知，通知会静默失败
+    Ok(true)
+}
+
 // 发送企业微信机器人通知
 #[tauri::command]
 async fn send_wechat_notification(
@@ -258,7 +276,9 @@ pub fn run() {
             send_wechat_notification,
             get_due_reminders,
             save_notification_settings,
-            load_notification_settings
+            load_notification_settings,
+            check_notification_permission,
+            request_notification_permission
         ])
         .setup(|app| {
             // 初始化数据库

@@ -7,10 +7,11 @@ export interface NotificationSettings {
   wechat_webhook?: string;
 }
 
-// 检查是否在 Tauri 环境中
-const isTauri = () => {
+// 检查是否在 Tauri 环境中（更可靠的检测方法）
+export const isTauri = () => {
   try {
-    return window.__TAURI__ !== undefined;
+    // 检查 __TAURI__ 内部属性（Tauri 2.0 使用 __TAURI_INTERNALS__）
+    return !!(window as any).__TAURI__ || !!(window as any).__TAURI_INTERNALS__;
   } catch {
     return false;
   }
@@ -159,8 +160,8 @@ export const notificationApi = {
   // 请求通知权限
   async requestPermission(): Promise<boolean> {
     if (isTauri()) {
-      // Tauri 环境下，通知权限由系统管理
-      return true;
+      // Tauri 环境下，使用后端的权限检查
+      return invoke("request_notification_permission");
     } else if ("Notification" in window) {
       const permission = await Notification.requestPermission();
       return permission === "granted";
@@ -171,7 +172,11 @@ export const notificationApi = {
   // 检查通知权限状态
   async checkPermission(): Promise<"granted" | "denied" | "default"> {
     if (isTauri()) {
-      return "granted";
+      // Tauri 环境下，使用后端的权限检查
+      const status = await invoke<string>("check_notification_permission");
+      if (status === "granted") return "granted";
+      if (status === "denied") return "denied";
+      return "default";
     } else if ("Notification" in window) {
       return Notification.permission as "granted" | "denied" | "default";
     }

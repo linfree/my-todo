@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "my-todo",
+        "title": "My Todo",
         "width": 800,
         "height": 600
       }
@@ -30,6 +30,15 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "linfr",
+    "category": "Productivity",
+    "shortDescription": "A simple todo application with reminders",
+    "longDescription": "A todo application with task reminders, notifications, and enterprise WeChat integration.",
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
   }
 }

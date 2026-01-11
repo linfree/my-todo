@@ -1,0 +1,387 @@
+/* 现代简约风格的日期选择器样式 */
+.custom-datepicker-with-time {
+  --datepicker-bg: hsl(var(--background));
+  --datepicker-border: hsl(var(--border) / 0.3);
+  --datepicker-primary: hsl(var(--primary));
+  --datepicker-primary-foreground: hsl(var(--primary-foreground));
+  --datepicker-muted: hsl(var(--muted));
+  --datepicker-muted-foreground: hsl(var(--muted-foreground));
+  --datepicker-foreground: hsl(var(--foreground));
+
+  font-family: inherit;
+  border: 1px solid var(--datepicker-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 12%);
+  background: var(--datepicker-bg);
+  padding: 16px;
+  animation: datepicker-fade-in 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@keyframes datepicker-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 自定义头部 */
+.custom-datepicker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 12px 0;
+}
+
+.custom-datepicker-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--datepicker-foreground);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-datepicker-nav:hover:not(:disabled) {
+  background: var(--datepicker-muted);
+}
+
+.custom-datepicker-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.custom-datepicker-month {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--datepicker-foreground);
+}
+
+/* 日历网格 */
+.custom-datepicker-with-time .react-datepicker__month {
+  margin: 0;
+}
+
+.custom-datepicker-with-time .react-datepicker__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+/* 星期标题 */
+.custom-datepicker-with-time .react-datepicker__day-names {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.custom-datepicker-with-time .react-datepicker__day-name {
+  color: var(--datepicker-muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: 0;
+}
+
+/* 日期格子 */
+.custom-datepicker-with-time .react-datepicker__day {
+  color: var(--datepicker-foreground);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.2s;
+  cursor: pointer;
+  margin: 0;
+}
+
+.custom-datepicker-with-time .react-datepicker__day:hover {
+  background: var(--datepicker-muted);
+}
+
+/* 选中状态 */
+.custom-datepicker-with-time .react-datepicker__day--selected,
+.custom-datepicker-with-time .react-datepicker__day--keyboard-selected {
+  background: var(--datepicker-primary) !important;
+  color: var(--datepicker-primary-foreground) !important;
+  font-weight: 500;
+}
+
+/* 今天 */
+.custom-datepicker-with-time .react-datepicker__day--today {
+  border: 2px solid var(--datepicker-primary);
+  font-weight: 500;
+}
+
+/* 其他月份日期 */
+.custom-datepicker-with-time .react-datepicker__day--outside-month {
+  color: var(--datepicker-muted-foreground);
+  opacity: 0.5;
+}
+
+/* 禁用日期 */
+.custom-datepicker-with-time .react-datepicker__day--disabled {
+  color: var(--datepicker-muted-foreground);
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 时间选择器面板 */
+.datepicker-time-panel {
+  display: flex;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--datepicker-border);
+}
+
+.datepicker-time-row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.datepicker-time-row label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--datepicker-muted-foreground);
+  text-align: center;
+}
+
+.datepicker-time-row select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--datepicker-border);
+  background: var(--datepicker-bg);
+  color: var(--datepicker-foreground);
+  font-size: 14px;
+  font-family: ui-monospace, monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+
+.datepicker-time-row select:hover {
+  border-color: var(--datepicker-muted-foreground);
+  background-color: var(--datepicker-muted);
+}
+
+.datepicker-time-row select:focus {
+  outline: none;
+  border-color: var(--datepicker-primary);
+  box-shadow: 0 0 0 3px rgb(var(--primary) / 0.1);
+}
+
+/* 三角箭头 */
+.custom-datepicker-with-time .react-datepicker__triangle {
+  display: none;
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .custom-datepicker-with-time {
+    padding: 12px;
+  }
+
+  .date-picker-time-panel {
+    flex-direction: column;
+  }
+}
+
+/* 内联日历样式 */
+.inline-calendar {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.inline-calendar .react-datepicker__month {
+  margin: 0;
+}
+
+.inline-calendar .react-datepicker__header {
+  display: none;
+}
+
+.inline-calendar .react-datepicker__month-container {
+  float: none;
+}
+
+/* 保留原有的自定义样式用于其他日期选择器 */
+.custom-datepicker {
+  --datepicker-bg: hsl(var(--background));
+  --datepicker-border: hsl(var(--border) / 0.3);
+  --datepicker-primary: hsl(var(--primary));
+  --datepicker-primary-foreground: hsl(var(--primary-foreground));
+  --datepicker-muted: hsl(var(--muted));
+  --datepicker-muted-foreground: hsl(var(--muted-foreground));
+  --datepicker-foreground: hsl(var(--foreground));
+
+  font-family: inherit;
+  border: 1px solid var(--datepicker-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 12%);
+  background: var(--datepicker-bg);
+  padding: 16px;
+  animation: datepicker-fade-in 0.2s ease-out;
+}
+
+.custom-datepicker .react-datepicker__header {
+  background: transparent;
+  border: none;
+  padding: 0 0 12px 0;
+}
+
+.custom-datepicker .react-datepicker__current-month {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--datepicker-foreground);
+  margin-bottom: 8px;
+}
+
+.custom-datepicker .react-datepicker__navigation {
+  top: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.custom-datepicker .react-datepicker__navigation:hover {
+  background: var(--datepicker-muted);
+}
+
+.custom-datepicker .react-datepicker__navigation-icon::before {
+  border-color: var(--datepicker-foreground);
+  border-width: 2px 2px 0 0;
+  height: 8px;
+  width: 8px;
+  top: 10px;
+}
+
+.custom-datepicker .react-datepicker__day-names {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 8px;
+}
+
+.custom-datepicker .react-datepicker__day-name {
+  color: var(--datepicker-muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
+}
+
+.custom-datepicker .react-datepicker__month {
+  margin: 0;
+}
+
+.custom-datepicker .react-datepicker__week {
+  display: flex;
+  justify-content: space-around;
+}
+
+.custom-datepicker .react-datepicker__day {
+  color: var(--datepicker-foreground);
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 2px 0;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.custom-datepicker .react-datepicker__day:hover {
+  background: var(--datepicker-muted);
+}
+
+.custom-datepicker .react-datepicker__day--selected,
+.custom-datepicker .react-datepicker__day--keyboard-selected {
+  background: var(--datepicker-primary) !important;
+  color: var(--datepicker-primary-foreground) !important;
+  font-weight: 500;
+}
+
+.custom-datepicker .react-datepicker__day--today {
+  border: 2px solid var(--datepicker-primary);
+  font-weight: 500;
+}
+
+.custom-datepicker .react-datepicker__day--outside-month {
+  color: var(--datepicker-muted-foreground);
+  opacity: 0.5;
+}
+
+.custom-datepicker .react-datepicker__day--disabled {
+  color: var(--datepicker-muted-foreground);
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.custom-datepicker .react-datepicker__time-container {
+  border-left: 1px solid var(--datepicker-border);
+  width: 100px;
+}
+
+.custom-datepicker .react-datepicker__time {
+  background: transparent;
+}
+
+.custom-datepicker .react-datepicker__time-header {
+  display: none;
+}
+
+.custom-datepicker .react-datepicker__time-list {
+  padding: 8px;
+}
+
+.custom-datepicker .react-datepicker__time-list-item {
+  height: 32px;
+  line-height: 32px;
+  padding: 0 8px;
+  margin: 2px 0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--datepicker-foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.custom-datepicker .react-datepicker__time-list-item:hover {
+  background: var(--datepicker-muted);
+}
+
+.custom-datepicker .react-datepicker__time-list-item--selected {
+  background: var(--datepicker-primary) !important;
+  color: var(--datepicker-primary-foreground) !important;
+  font-weight: 500;
+}
+
+.custom-datepicker .react-datepicker__triangle {
+  display: none;
+}

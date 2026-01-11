@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Productivity SaaS color palette */
+    --background: 210 40% 98%; /* #F8FAFC */
+    --foreground: 215 25% 15%; /* #1E293B */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+    --primary: 217 91% 60%; /* #3B82F6 - Trust blue */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 91% 75%; /* #60A5FA */
+    --secondary-foreground: 215 25% 15%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 215 25% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%; /* #E2E8F0 */
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 215 25% 15%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 18%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 18%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 91% 65%;
+    --secondary-foreground: 215 25% 15%;
+    --muted: 222 47% 22%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 222 47% 22%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 47% 25%;
+    --input: 222 47% 25%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Open Sans', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* 移动端优化 */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+/* 移动端触摸交互优化 */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* 安全区适配 - 支持 iPhone 等设备的刘海屏和底部指示条 */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 触摸优化 - 增大点击区域 */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 防止双击缩放 */
+  .no-zoom {
+    touch-action: manipulation;
+  }
+}
+
+/* 移动端滚动优化 */
+@layer components {
+  /* 平滑滚动 */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 移动端优化的滚动容器 */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* 按钮和交互元素的触摸反馈 */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}

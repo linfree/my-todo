@@ -7,6 +7,18 @@ export interface NotificationSettings {
   wechat_webhook?: string;
 }
 
+// 备份设置
+export interface WebDavSettings {
+  enabled: boolean;
+  url: string;
+  username: string;
+  password: string;
+  basePath: string;
+  autoBackup: boolean;
+  maxBackups?: number;
+  simpleMode: boolean;
+}
+
 // 检查是否在 Tauri 环境中（更可靠的检测方法）
 export const isTauri = () => {
   try {
@@ -25,7 +37,8 @@ export const databaseApi = {
       console.log("Not in Tauri environment, skipping database init");
       return;
     }
-    return invoke("init_database");
+    // 仅 SQLite，无需后端初始化命令
+    return;
   },
 
   // 获取所有任务
@@ -35,7 +48,19 @@ export const databaseApi = {
       const stored = localStorage.getItem("tasks");
       return stored ? JSON.parse(stored) : [];
     }
-    return invoke("get_tasks");
+
+    const tasks = await invoke<any[]>("get_tasks");
+    // 将后端返回的 JSON 字符串解析回数组
+    return tasks.map((task: any) => ({
+      ...task,
+      tags: JSON.parse(task.tags || "[]"),
+      subTasks: JSON.parse(task.subTasks || "[]"),
+      reminders: JSON.parse(task.reminders || "[]"),
+      // 将 ISO 字符串转换回 Date 对象
+      createdAt: new Date(task.createdAt),
+      updatedAt: new Date(task.updatedAt),
+      dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+    }));
   },
 
   // 保存任务
@@ -52,7 +77,29 @@ export const databaseApi = {
       localStorage.setItem("tasks", JSON.stringify(tasks));
       return;
     }
-    return invoke("save_task", { task });
+
+    // 将数组字段序列化为 JSON 字符串（后端期望字符串）
+    const taskForBackend = {
+      ...task,
+      tags: JSON.stringify(task.tags),
+      subTasks: JSON.stringify(task.subTasks),
+      reminders: JSON.stringify(task.reminders),
+      // 将 Date 对象转换为 ISO 字符串
+      createdAt: task.createdAt instanceof Date ? task.createdAt.toISOString() : task.createdAt,
+      updatedAt: task.updatedAt instanceof Date ? task.updatedAt.toISOString() : task.updatedAt,
+      dueDate: task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate,
+    };
+
+    console.log("[API] Saving task:", taskForBackend);
+    try {
+      await invoke("save_task", { task: taskForBackend });
+      console.log("[API] Task saved successfully");
+      // 保存任务后立即检查提醒
+      await this.checkDueReminders();
+    } catch (error) {
+      console.error("[API] Failed to save task:", error);
+      throw error;
+    }
   },
 
   // 删除任务
@@ -74,7 +121,22 @@ export const databaseApi = {
       const stored = localStorage.getItem("lists");
       return stored ? JSON.parse(stored) : [];
     }
-    return invoke("get_lists");
+
+    const lists = await invoke<any[]>("get_lists");
+    // 将 ISO 字符串转换回 Date 对象
+    return lists.map((list: any) => ({
+      ...list,
+      createdAt: new Date(list.createdAt),
+    }));
+  },
+
+  // 检查并发送到期的提醒
+  async checkDueReminders(): Promise<void> {
+    if (!isTauri()) {
+      // Web 端不执行提醒检查
+      return;
+    }
+    return invoke("check_and_send_due_reminders");
   },
 };
 
@@ -181,6 +243,44 @@ export const notificationApi = {
       return Notification.permission as "granted" | "denied" | "default";
     }
     return "default";
+  },
+};
+
+// WebDAV/坚果云备份 API
+export const webdavApi = {
+  async saveSettings(settings: WebDavSettings): Promise<void> {
+    if (isTauri()) {
+      return invoke("save_webdav_settings", { settings });
+    } else {
+      localStorage.setItem("webdav_settings", JSON.stringify(settings));
+    }
+  },
+  async loadSettings(): Promise<WebDavSettings | null> {
+    if (isTauri()) {
+      return invoke("load_webdav_settings");
+    } else {
+      const s = localStorage.getItem("webdav_settings");
+      return s ? JSON.parse(s) : null;
+    }
+  },
+  async testConnection(settings: WebDavSettings): Promise<void> {
+    if (isTauri()) {
+      return invoke("test_webdav_connection", { settings });
+    } else {
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  },
+  async backup(): Promise<string> {
+    if (isTauri()) {
+      return invoke("backup_to_webdav");
+    } else {
+      return "web-backup-placeholder";
+    }
+  },
+  async restore(filename: string): Promise<void> {
+    if (isTauri()) {
+      return invoke("restore_from_webdav", { filename });
+    }
   },
 };
 

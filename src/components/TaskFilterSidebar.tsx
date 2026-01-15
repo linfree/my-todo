@@ -11,20 +11,21 @@ import {
   X,
   Settings,
   Bell,
+  Database,
 } from "lucide-react";
 import { useTodoStore } from "../store/todoStore";
 import { cn } from "../lib/utils";
 import { getCategoryIcon, getRandomTagColor } from "../lib/icons";
+import { Cloud } from "lucide-react";
 
 interface TaskFilterSidebarProps {
   className?: string;
   isOpen?: boolean;
   onClose?: () => void;
-  onOpenSettings: () => void;
-  onOpenNotificationSettings?: () => void;
+  onOpenSettings: (tab?: string) => void;
 }
 
-export function TaskFilterSidebar({ className, isOpen = true, onClose, onOpenSettings, onOpenNotificationSettings }: TaskFilterSidebarProps) {
+export function TaskFilterSidebar({ className, isOpen = true, onClose, onOpenSettings }: TaskFilterSidebarProps) {
   const {
     categories,
     tags,
@@ -157,14 +158,16 @@ export function TaskFilterSidebar({ className, isOpen = true, onClose, onOpenSet
       label: "分类",
       type: "categories",
       icon: <FolderOpen className="w-4 h-4" />,
-      children: categories.map((cat) => ({
-        id: cat.id,
-        label: cat.name,
-        type: "category" as const,
-        categoryId: cat.id,
-        icon: getCategoryIconElement(cat.icon),
-        count: getCategoryTaskCount(cat.id),
-      })),
+      children: categories
+        .filter((cat) => cat.id !== "inbox")
+        .map((cat) => ({
+          id: cat.id,
+          label: cat.name,
+          type: "category" as const,
+          categoryId: cat.id,
+          icon: getCategoryIconElement(cat.icon),
+          count: getCategoryTaskCount(cat.id),
+        })),
     },
     // 标签组
     {
@@ -385,25 +388,13 @@ export function TaskFilterSidebar({ className, isOpen = true, onClose, onOpenSet
         <div className="p-3 border-t border-border/60 space-y-1">
           <button
             onClick={() => {
-              if (onOpenNotificationSettings) {
-                onOpenNotificationSettings();
-                if (onClose) onClose();
-              }
-            }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
-          >
-            <Bell className="w-4 h-4" />
-            通知设置
-          </button>
-          <button
-            onClick={() => {
-              onOpenSettings();
+              onOpenSettings("sync");
               if (onClose) onClose();
             }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
           >
             <Settings className="w-4 h-4" />
-            系统设置
+            设置中心
           </button>
         </div>
       </aside>

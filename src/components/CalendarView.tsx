@@ -140,10 +140,10 @@ function CalendarDay({ day, tasks, isToday, onTaskClick }: CalendarDayProps) {
   const remainingCount = tasks.length - maxTasksToShow;
 
   const priorityColors = {
-    none: "bg-muted",
-    low: "bg-blue-500",
-    medium: "bg-amber-500",
-    high: "bg-red-500",
+    none: "bg-muted text-foreground",
+    low: "bg-blue-500 text-white",
+    medium: "bg-amber-500 text-white",
+    high: "bg-red-500 text-white",
   };
 
   return (
@@ -170,7 +170,7 @@ function CalendarDay({ day, tasks, isToday, onTaskClick }: CalendarDayProps) {
               onTaskClick(task);
             }}
             className={cn(
-              "text-xs px-1.5 py-0.5 rounded-md truncate text-white shadow-sm",
+              "text-xs px-1.5 py-0.5 rounded-md truncate shadow-sm",
               priorityColors[task.priority],
               task.completed && "opacity-50 line-through"
             )}

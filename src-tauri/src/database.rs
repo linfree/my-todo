@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::io::{self, Read, Write};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use tauri::AppHandle;
 use tauri::Manager;
 
 // 任务数据结构
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Task {
     pub id: String,
     pub title: String,
@@ -13,10 +17,13 @@ pub struct Task {
     pub completed: bool,
     pub priority: String,
     pub status: String,
+    #[serde(alias = "list_id")]
     pub list_id: String,
-    pub tags: String, // JSON string
-    pub sub_tasks: String, // JSON string
-    pub reminders: String, // JSON string
+    pub tags: String,
+    #[serde(alias = "sub_tasks")]
+    pub sub_tasks: String,
+    pub reminders: String,
+    #[serde(alias = "due_date")]
     pub due_date: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -34,8 +41,12 @@ pub struct TaskList {
     pub created_at: String,
 }
 
+// （已移除 PostgreSQL 支持，仅保留 SQLite）
+
+// ========== SQLite 实现 ==========
+
 // 数据库路径
-fn get_db_path(handle: &AppHandle) -> PathBuf {
+fn get_sqlite_db_path(handle: &AppHandle) -> PathBuf {
     let app_dir = handle.path().app_data_dir().expect("Failed to get app data dir");
     fs::create_dir_all(&app_dir).expect("Failed to create app data dir");
     app_dir.join("todo.db")
@@ -45,10 +56,10 @@ fn get_db_path(handle: &AppHandle) -> PathBuf {
 #[cfg(feature = "sqlite")]
 use rusqlite::{Connection, params};
 
-// 初始化数据库
+// SQLite 初始化
 #[cfg(feature = "sqlite")]
-pub fn init_database(handle: &AppHandle) -> Result<(), String> {
-    let db_path = get_db_path(handle);
+pub fn init_sqlite_database(handle: &AppHandle) -> Result<(), String> {
+    let db_path = get_sqlite_db_path(handle);
     let conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
@@ -68,7 +79,7 @@ pub fn init_database(handle: &AppHandle) -> Result<(), String> {
             due_date TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            order INTEGER NOT NULL DEFAULT 0
+            \"order\" INTEGER NOT NULL DEFAULT 0
         )",
         [],
     ).map_err(|e| format!("Failed to create tasks table: {}", e))?;
@@ -80,11 +91,34 @@ pub fn init_database(handle: &AppHandle) -> Result<(), String> {
             name TEXT NOT NULL,
             icon TEXT,
             color TEXT,
-            order INTEGER NOT NULL DEFAULT 0,
+            \"order\" INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL
         )",
         [],
     ).map_err(|e| format!("Failed to create lists table: {}", e))?;
+
+    // 创建已发送提醒记录表
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sent_reminders (
+            id TEXT PRIMARY KEY,
+            task_id TEXT NOT NULL,
+            reminder_time INTEGER NOT NULL,
+            sent_at INTEGER NOT NULL,
+            reminder_data TEXT
+        )",
+        [],
+    ).map_err(|e| format!("Failed to create sent_reminders table: {}", e))?;
+
+    // 创建索引以提高查询性能
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sent_reminders_task_id ON sent_reminders(task_id)",
+        [],
+    ).map_err(|e| format!("Failed to create index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sent_reminders_time ON sent_reminders(reminder_time)",
+        [],
+    ).map_err(|e| format!("Failed to create index: {}", e))?;
 
     // 插入默认清单
     let now = chrono::Utc::now().to_rfc3339();
@@ -96,7 +130,7 @@ pub fn init_database(handle: &AppHandle) -> Result<(), String> {
 
     for (id, name, icon, color, order) in default_lists {
         conn.execute(
-            "INSERT OR IGNORE INTO lists (id, name, icon, color, order, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT OR IGNORE INTO lists (id, name, icon, color, \"order\", created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![id, name, icon, color, order, now],
         ).map_err(|e| format!("Failed to insert default list: {}", e))?;
     }
@@ -104,14 +138,14 @@ pub fn init_database(handle: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-// 获取所有任务
+// SQLite 获取所有任务
 #[cfg(feature = "sqlite")]
-pub fn get_all_tasks(handle: &AppHandle) -> Result<Vec<Task>, String> {
-    let db_path = get_db_path(handle);
+pub fn get_sqlite_tasks(handle: &AppHandle) -> Result<Vec<Task>, String> {
+    let db_path = get_sqlite_db_path(handle);
     let conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
-    let mut stmt = conn.prepare("SELECT * FROM tasks ORDER BY order ASC, created_at DESC")
+    let mut stmt = conn.prepare("SELECT * FROM tasks ORDER BY \"order\" ASC, created_at DESC")
         .map_err(|e| format!("Failed to prepare statement: {}", e))?;
 
     let tasks = stmt.query_map([], |row| {
@@ -139,15 +173,15 @@ pub fn get_all_tasks(handle: &AppHandle) -> Result<Vec<Task>, String> {
     Ok(tasks)
 }
 
-// 保存任务
+// SQLite 保存任务
 #[cfg(feature = "sqlite")]
-pub fn save_task(handle: &AppHandle, task: &Task) -> Result<(), String> {
-    let db_path = get_db_path(handle);
+pub fn save_sqlite_task(handle: &AppHandle, task: &Task) -> Result<(), String> {
+    let db_path = get_sqlite_db_path(handle);
     let conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
     conn.execute(
-        "INSERT OR REPLACE INTO tasks (id, title, description, completed, priority, status, list_id, tags, sub_tasks, reminders, due_date, created_at, updated_at, order) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+        "INSERT OR REPLACE INTO tasks (id, title, description, completed, priority, status, list_id, tags, sub_tasks, reminders, due_date, created_at, updated_at, \"order\") VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![
             task.id,
             task.title,
@@ -169,27 +203,30 @@ pub fn save_task(handle: &AppHandle, task: &Task) -> Result<(), String> {
     Ok(())
 }
 
-// 删除任务
+// SQLite 删除任务
 #[cfg(feature = "sqlite")]
-pub fn delete_task(handle: &AppHandle, id: &str) -> Result<(), String> {
-    let db_path = get_db_path(handle);
+pub fn delete_sqlite_task(handle: &AppHandle, id: &str) -> Result<(), String> {
+    let db_path = get_sqlite_db_path(handle);
     let conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
     conn.execute("DELETE FROM tasks WHERE id = ?1", params![id])
         .map_err(|e| format!("Failed to delete task: {}", e))?;
 
+    // 同时删除相关的提醒记录
+    delete_sqlite_task_reminders(handle, id)?;
+
     Ok(())
 }
 
-// 获取所有清单
+// SQLite 获取所有清单
 #[cfg(feature = "sqlite")]
-pub fn get_all_lists(handle: &AppHandle) -> Result<Vec<TaskList>, String> {
-    let db_path = get_db_path(handle);
+pub fn get_sqlite_lists(handle: &AppHandle) -> Result<Vec<TaskList>, String> {
+    let db_path = get_sqlite_db_path(handle);
     let conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
-    let mut stmt = conn.prepare("SELECT * FROM lists ORDER BY order ASC")
+    let mut stmt = conn.prepare("SELECT * FROM lists ORDER BY \"order\" ASC")
         .map_err(|e| format!("Failed to prepare statement: {}", e))?;
 
     let lists = stmt.query_map([], |row| {
@@ -208,3 +245,65 @@ pub fn get_all_lists(handle: &AppHandle) -> Result<Vec<TaskList>, String> {
 
     Ok(lists)
 }
+
+// SQLite 提醒记录相关函数
+#[cfg(feature = "sqlite")]
+pub fn is_sqlite_reminder_sent(handle: &AppHandle, task_id: &str, reminder_time: i64) -> Result<bool, String> {
+    let db_path = get_sqlite_db_path(handle);
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+
+    let mut stmt = conn.prepare("SELECT COUNT(*) FROM sent_reminders WHERE task_id = ?1 AND reminder_time = ?2")
+        .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+    let count: i64 = stmt.query_row(params![task_id, reminder_time], |row| row.get(0))
+        .map_err(|e| format!("Failed to query sent reminder: {}", e))?;
+
+    Ok(count > 0)
+}
+
+#[cfg(feature = "sqlite")]
+pub fn save_sqlite_sent_reminder(handle: &AppHandle, id: &str, task_id: &str, reminder_time: i64, reminder_data: &str) -> Result<(), String> {
+    let db_path = get_sqlite_db_path(handle);
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+
+    let sent_at = chrono::Utc::now().timestamp();
+
+    conn.execute(
+        "INSERT OR REPLACE INTO sent_reminders (id, task_id, reminder_time, sent_at, reminder_data) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![id, task_id, reminder_time, sent_at, reminder_data],
+    ).map_err(|e| format!("Failed to save sent reminder: {}", e))?;
+
+    Ok(())
+}
+
+#[cfg(feature = "sqlite")]
+pub fn cleanup_sqlite_old_reminders(handle: &AppHandle) -> Result<(), String> {
+    let db_path = get_sqlite_db_path(handle);
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+
+    let thirty_days_ago = chrono::Utc::now().timestamp() - (30 * 24 * 60 * 60);
+
+    conn.execute("DELETE FROM sent_reminders WHERE sent_at < ?1", params![thirty_days_ago])
+        .map_err(|e| format!("Failed to cleanup old reminders: {}", e))?;
+
+    Ok(())
+}
+
+#[cfg(feature = "sqlite")]
+pub fn delete_sqlite_task_reminders(handle: &AppHandle, task_id: &str) -> Result<(), String> {
+    let db_path = get_sqlite_db_path(handle);
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+
+    conn.execute("DELETE FROM sent_reminders WHERE task_id = ?1", params![task_id])
+        .map_err(|e| format!("Failed to delete task reminders: {}", e))?;
+
+    Ok(())
+}
+
+// （已移除 PostgreSQL 实现）
+
+

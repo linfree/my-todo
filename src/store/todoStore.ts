@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Task, TaskList, Category, Priority, TaskStatus, ViewMode, Tag, MainView } from "../types";
+import { databaseApi } from "../lib/api";
 
 interface TodoStore {
   // 状态
@@ -137,17 +138,34 @@ export const useTodoStore = create<TodoStore>()(
           createdAt: new Date(),
           updatedAt: new Date(),
         };
-        set((state) => ({ tasks: [...state.tasks, newTask] }));
+        set((state) => {
+          // 异步保存到后端，不阻塞 UI
+          databaseApi.saveTask(newTask).catch((error) => {
+            console.error("[Store] Failed to save task to backend:", error);
+          });
+          return { tasks: [...state.tasks, newTask] };
+        });
       },
 
       updateTask: (id, updates) => {
-        set((state) => ({
-          tasks: state.tasks.map((task) =>
+        set((state) => {
+          const updatedTasks = state.tasks.map((task) =>
             task.id === id
               ? { ...task, ...updates, updatedAt: new Date() }
               : task
-          ),
-        }));
+          );
+
+          // 找到被更新的任务并保存到后端
+          const updatedTask = updatedTasks.find((t) => t.id === id);
+          if (updatedTask) {
+            // 异步保存到后端，不阻塞 UI
+            databaseApi.saveTask(updatedTask).catch((error) => {
+              console.error("[Store] Failed to save task to backend:", error);
+            });
+          }
+
+          return { tasks: updatedTasks };
+        });
       },
 
       deleteTask: (id) => {

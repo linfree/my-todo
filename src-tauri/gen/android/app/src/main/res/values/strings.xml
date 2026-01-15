@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">my-todo</string>
+    <string name="main_activity_title">my-todo</string>
+</resources>

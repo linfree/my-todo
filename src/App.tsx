@@ -8,8 +8,7 @@ import { Card, CardContent } from "./components/ui/card";
 import { TaskDetailDialog } from "./components/TaskDetailDialog";
 import { BoardView } from "./components/BoardView";
 import { CalendarView } from "./components/CalendarView";
-import { ApiSettingsDialog } from "./components/ApiSettingsDialog";
-import { NotificationSettingsDialog } from "./components/NotificationSettingsDialog";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { TaskFilterSidebar } from "./components/TaskFilterSidebar";
 import { TopTabBar } from "./components/TopTabBar";
 import { SortableTaskItem } from "./components/SortableTaskItem";
@@ -46,7 +45,7 @@ function getGreeting() {
 // App 主组件
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState("sync");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -151,8 +150,10 @@ function App() {
           <TaskFilterSidebar
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenNotificationSettings={() => setIsNotificationSettingsOpen(true)}
+            onOpenSettings={(tab) => {
+              setSettingsTab(tab || "sync");
+              setIsSettingsOpen(true);
+            }}
           />
         )}
 
@@ -238,6 +239,7 @@ function App() {
                               key={task.id}
                               task={task}
                               onClick={() => handleTaskClick(task)}
+                              onReminderClick={() => handleTaskClick(task)}
                               isTrashView={isTrashView}
                             />
                           ))}
@@ -286,14 +288,10 @@ function App() {
         onClose={() => setIsDetailDialogOpen(false)}
       />
 
-      <ApiSettingsDialog
+      <SettingsDialog
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-      />
-
-      <NotificationSettingsDialog
-        isOpen={isNotificationSettingsOpen}
-        onClose={() => setIsNotificationSettingsOpen(false)}
+        initialTab={settingsTab}
       />
     </div>
   );

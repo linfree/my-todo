@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoreHorizontal, Plus, GripVertical } from "lucide-react";
+import { Bell, MoreHorizontal, Plus, GripVertical } from "lucide-react";
 import { useTodoStore } from "../store/todoStore";
 import { Task, TaskStatus, Priority } from "../types";
 import { Card, CardContent } from "./ui/card";
@@ -354,6 +354,13 @@ function TaskCard({ task, onClick, isDragging, dragHandleProps }: TaskCardProps)
                   <span className="w-5 h-5 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-medium">
                     {task.subTasks.filter((st) => st.completed).length}/{task.subTasks.length}
                   </span>
+                </div>
+              )}
+
+              {task.reminders.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-primary">
+                  <Bell className="w-3 h-3" />
+                  <span>{task.reminders.length}</span>
                 </div>
               )}
 

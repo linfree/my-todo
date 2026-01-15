@@ -18,16 +18,19 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rusqlite = { version = "0.32", features = ["bundled"], optional = true }
 chrono = "0.4"
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 notify-rust = { version = "4", features = ["serde"] }
+image = "0.25"
+url = "2"
+zip = "0.6"
 
 [features]
 default = ["sqlite"]

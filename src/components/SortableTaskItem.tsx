@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, GripVertical, RotateCcw, Trash2 } from "lucide-react";
+import { Bell, Calendar, GripVertical, RotateCcw, Trash2 } from "lucide-react";
 import { useTodoStore } from "../store/todoStore";
 import { Task } from "../types";
 import { Badge } from "./ui/badge";
@@ -10,10 +10,11 @@ import { PRIORITY_COLORS } from "../lib/icons";
 interface SortableTaskItemProps {
   task: Task;
   onClick: () => void;
+  onReminderClick?: () => void;
   isTrashView?: boolean;
 }
 
-export function SortableTaskItem({ task, onClick, isTrashView }: SortableTaskItemProps) {
+export function SortableTaskItem({ task, onClick, onReminderClick, isTrashView }: SortableTaskItemProps) {
   const {
     attributes,
     listeners,
@@ -127,7 +128,7 @@ export function SortableTaskItem({ task, onClick, isTrashView }: SortableTaskIte
               {task.description}
             </p>
           )}
-          {(task.dueDate || task.tags.length > 0) && (
+          {(task.dueDate || task.tags.length > 0 || task.reminders.length > 0) && (
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {task.dueDate && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -140,6 +141,19 @@ export function SortableTaskItem({ task, onClick, isTrashView }: SortableTaskIte
                   {tag.name}
                 </Badge>
               ))}
+              {task.reminders.length > 0 && onReminderClick && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReminderClick();
+                  }}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                  title={`${task.reminders.length} 个提醒`}
+                >
+                  <Bell className="w-3 h-3" />
+                  <span>{task.reminders.length}</span>
+                </button>
+              )}
             </div>
           )}
         </div>
